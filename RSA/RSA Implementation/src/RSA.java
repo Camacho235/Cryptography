@@ -9,17 +9,45 @@ public class RSA {
 	private BigInteger privateKey;
 	private BigInteger publicKey;
 	private BigInteger n;
+	private int length;
 	
 	public static void main(String args[]) {
-		RSA rsaInstance = new RSA(2048);
-		rsaInstance.keyGeneration(1028);
 		
-		BigInteger message = new BigInteger("40123");
-		BigInteger ciphertext = rsaInstance.encrypt(message);
+		//Lets parse the arguments
+		if (args.length == 0) {
+			RSA rsaInstance = new RSA(2048);
+			rsaInstance.keyGeneration();
+			System.out.println(rsaInstance.toString());
+		}
+		else {
+			for (int i = 0; i < args.length; i++) {
+				if(args[i].equals("-length")) {
+					try {
+						RSA rsaInstance = new RSA(Integer.parseInt(args[i+1]));
+						rsaInstance.keyGeneration();
+						System.out.println(rsaInstance.toString());
+					}
+					catch (NumberFormatException e) {
+						System.out.println("Argument for length needs a integer value!");
+					}
+					catch (ArrayIndexOutOfBoundsException e) {
+						System.out.println("Need to enter argument for length!");
+					}
+					return;
+				}
+			}
+			
+		}
 		
-		System.out.println(message);
-		System.out.println(ciphertext);
-		System.out.println(rsaInstance.decrypt(ciphertext));
+//		RSA rsaInstance = new RSA(2048);
+//		rsaInstance.keyGeneration();
+//		
+//		BigInteger message = new BigInteger("349082934280");
+//		BigInteger ciphertext = rsaInstance.encrypt(message);
+//		System.out.println(rsaInstance.toString());
+//		System.out.println(message);
+//		System.out.println(ciphertext);
+//		System.out.println(rsaInstance.decrypt(ciphertext));
 		//System.out.println(rsaInstance.toString());
 
 		
@@ -29,7 +57,7 @@ public class RSA {
 	 * Creates an RSA instance
 	 */
 	public RSA(int length) {
-		
+		this.length = length;
 	}
 	
 	@Override
@@ -39,6 +67,10 @@ public class RSA {
 		
 	}
 	
+	/**
+	 * String Representation the RSA private key
+	 * @return a string representation of RSA private key
+	 */
 	public String privateKeyString() {
 		//Not sure if there is standard for parsing RSA strings, for now print like this
 		String result = "----BEGIN RSA PRIVATE KEY-----\n";
@@ -47,6 +79,10 @@ public class RSA {
 		return result;
 	}
 	
+	/**
+	 * String Representation the RSA public key
+	 * @return a string representation of RSA public key
+	 */
 	public String publicKeyString() {
 		//Not sure if there is standard for parsing RSA strings, for now print like this
 		String result = "----BEGIN RSA PUBLIC KEY-----\n";
@@ -60,12 +96,12 @@ public class RSA {
 	 * @param length specifies the number of bits in the encryption scheme
 	 * @return a BigInteger array of length 3 consisting of n, privateExp, publicExp in 
 	 */
-	public void keyGeneration(int length) {
+	public void keyGeneration() {
 		BigInteger one = new BigInteger("1");
 		SecureRandom rnd = new SecureRandom();
 		
-		BigInteger p = BigInteger.probablePrime(length, rnd);
-		BigInteger q = BigInteger.probablePrime(length, rnd);
+		BigInteger p = BigInteger.probablePrime(this.length/2, rnd);
+		BigInteger q = BigInteger.probablePrime(this.length/2, rnd);
 		
 		BigInteger[] eeaResult;
 		
@@ -138,11 +174,20 @@ public class RSA {
 		return result;
 	}
 	
-	
+	/**
+	 * Encrypts plain text
+	 * @param plaintext the BigInteger representation of the plaintext
+	 * @return BigInteger representation of the encrypted plaintext
+	 */
 	public BigInteger encrypt(BigInteger plaintext) {
 		return plaintext.modPow(this.publicKey, this.n);
 	}
 	
+	/**
+	 * Encrypts ciphertext
+	 * @param plaintext the BigInteger representation of the ciphertext
+	 * @return BigInteger representation of the decrypted ciphertext
+	 */
 	public BigInteger decrypt(BigInteger ciphertext) {
 		return ciphertext.modPow(this.privateKey, this.n);
 	}
