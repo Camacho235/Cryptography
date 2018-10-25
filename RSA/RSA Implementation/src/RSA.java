@@ -2,6 +2,7 @@
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Base64;
 
 //PseudoRandom version of RSA
 public class RSA {
@@ -9,6 +10,8 @@ public class RSA {
 	private BigInteger privateKey;
 	private BigInteger publicKey;
 	private BigInteger n;
+	private BigInteger p;
+	private BigInteger q;
 	private int length;
 	
 	public static void main(String args[]) {
@@ -17,6 +20,11 @@ public class RSA {
 		if (args.length == 0) {
 			RSA rsaInstance = new RSA(2048);
 			rsaInstance.keyGeneration();
+			BigInteger message = new BigInteger("2452341312313");
+			BigInteger ciphertext = rsaInstance.encrypt(message);
+			System.out.println(message.toString());
+			System.out.println(ciphertext.toString());
+			System.out.println(rsaInstance.decrypt(ciphertext));
 			System.out.println(rsaInstance.toString());
 		}
 		else {
@@ -68,13 +76,36 @@ public class RSA {
 	}
 	
 	/**
-	 * String Representation the RSA private key
+	 * String Representation the RSA private key in base64
 	 * @return a string representation of RSA private key
 	 */
 	public String privateKeyString() {
+		//RFC says 
+		/*
+		  version           Version,
+          modulus           INTEGER,  -- n
+          publicExponent    INTEGER,  -- e
+          privateExponent   INTEGER,  -- d
+          prime1            INTEGER,  -- p
+          prime2            INTEGER,  -- q
+          exponent1         INTEGER,  -- d mod (p-1)
+          exponent2         INTEGER,  -- d mod (q-1)
+          coefficient       INTEGER,  -- (inverse of q) mod p
+          otherPrimeInfos   OtherPrimeInfos OPTIONAL
+		 */
 		//Not sure if there is standard for parsing RSA strings, for now print like this
 		String result = "----BEGIN RSA PRIVATE KEY-----\n";
-		result += privateKey.toString().replaceAll("(.{50})", "$1\n");
+		
+		String rsaRFC = "";
+		rsaRFC += "1";
+		rsaRFC += this.n.toString();
+		rsaRFC += this.publicKey.toString();
+		rsaRFC += this.privateKey.toString(); //.replaceAll("(.{64})", "$1\n");
+		rsaRFC += this.p.toString();
+		rsaRFC += this.q.toString();
+		
+		result += rsaRFC.replaceAll("(.{64})", "$1\n");
+		
 		result += "\n----END RSA PRIVATE KEY-----";
 		return result;
 	}
@@ -86,7 +117,7 @@ public class RSA {
 	public String publicKeyString() {
 		//Not sure if there is standard for parsing RSA strings, for now print like this
 		String result = "----BEGIN RSA PUBLIC KEY-----\n";
-		result += publicKey.toString().replaceAll("(.{50})", "$1\n");
+		result += publicKey.toString().replaceAll("(.{64})", "$1\n");
 		result += "\n----END RSA PUBLIC KEY-----";
 		return result;
 	}
@@ -97,15 +128,14 @@ public class RSA {
 	 * @return a BigInteger array of length 3 consisting of n, privateExp, publicExp in 
 	 */
 	public void keyGeneration() {
-		BigInteger one = new BigInteger("1");
 		SecureRandom rnd = new SecureRandom();
 		
-		BigInteger p = BigInteger.probablePrime(this.length/2, rnd);
-		BigInteger q = BigInteger.probablePrime(this.length/2, rnd);
+		this.p = BigInteger.probablePrime(this.length/2, rnd);
+		this.q = BigInteger.probablePrime(this.length/2, rnd);
 		
 		BigInteger[] eeaResult;
 		
-		BigInteger phi = (p.subtract(one)).multiply(q.subtract(one));
+		BigInteger phi = (p.subtract(BigInteger.ONE)).multiply(q.subtract(BigInteger.ONE));
 		
 		//Get a public e in range of 1 - phi, st gcd(e, phi) = 1
 		
@@ -126,7 +156,7 @@ public class RSA {
 		eeaResult = eea(phi, publicExp);
 		
 		privateExp = eeaResult[2];
-		
+				
 		this.n = p.multiply(q);
 		this.publicKey = publicExp;
 		this.privateKey = privateExp;		
